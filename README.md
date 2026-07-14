@@ -111,17 +111,18 @@ For font replacements, _we recommend_:
 
 ```typst
 deco: (line-number, adjust-inline-math)
-heading: (h2: (sym, dy, size), h3: (sym, dy, size))
+headings: (h2: (sym, dy, size), h3: (sym, dy, size), thm: (base))
 ```
 
 * **`deco`**: configures decorations.
   * `line-number`: toggle show line number or not. Default `true`.
   * `adjust-inline-math`: whether the template should automatically adjust the inline maths. Default `true`.
 
-* **`heading`**: configures H2 and H3 heading.
+* **`headings`**: configure headings and related settings.
   * `sym`: the symbol to place on the vertical line.
   * `dy`: for some large symbols the symbol will be a bit off the horizontal line. Nudge this parameter to bring it back. Default: `0pt`.
   * `size`: the size factor of the headings. Default: `2` for H2, `1.5` for H3.
+  * `thm.base`: the base level for theorems. For example, if `thm.base` is set to `0`, theorems will be numbered `1, 2, 3, ...`, and if set to `2`, theorems will be numbered like `2.4.25`, following the section and subsection number.
 
 ---
 
