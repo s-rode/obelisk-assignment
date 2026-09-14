@@ -1,160 +1,137 @@
-#import "layout.typ": *
+// Theorem environments: shared numbering, margin labels, and references.
 
+#import "settings.typ": settings
+#import "theme.typ": theorem-style
+#import "layout.typ": place-side
+
+// Width of the colored bar that marks an environment in the outer margin.
+#let theorem-bar = 4pt
+
+// All environments share one counter, numbered `<section>.<subsection>.<n>`.
 #let thm-counter = counter("theorem")
 
-#let init-theorem(it, base-level: 1) = {
-  // 1. Suppress default figure layout for theorems so we only see your custom styling
-  show figure.where(kind: "theorem"): it => align(
-    left,
-    it.body,
+// Render one environment: a margin bar, a label, and the body.
+#let theorem-render(env, title, number, body, theme-key: "theorem") = context {
+  let s = settings.get()
+  let style = theorem-style(s.theme, theme-key)
+
+  let label = block(
+    width: s.side.width,
+    text(
+      fill: style.label,
+      font: s.fonts.sans,
+      [*#env #number*\ #if title != none { title }],
+    ),
   )
+
+  // The bar overshoots the block by half a grid step on each side.
+  let overshoot = s.texts.step / 2
+  block(
+    block([#place-side(label) #body], width: s.body.width, breakable: true),
+    width: 100%,
+    breakable: true,
+    outset: (
+      left: s.side.half-gutter,
+      right: s.side.half-gutter,
+      top: overshoot,
+      bottom: overshoot,
+    ),
+    stroke: (left: (paint: style.paint, thickness: theorem-bar)),
+  )
+}
+
+// Installed by `init` via `show: theorem-rules.with(...)`: suppresses the default
+// figure layout, restarts numbering each section, and formats `@thm` / `@thm[!]`.
+#let theorem-rules(it, base-level: 1, pattern: "1.1.1") = {
+  show figure.where(kind: "theorem"): it => align(left, it.body)
 
   thm-counter.update((1,))
 
-  // 2. Reset the shared theorem counter every time a top-level section (Heading 1) begins
+  // Restart numbering, keeping the heading numbers as a prefix.
   show heading: it => {
     it
     if it.numbering != none and it.level <= base-level {
       context {
-        let h-val = counter(heading).get()
-        // Reset the theorem level to 0, maintaining the current heading prefix
-        thm-counter.update(h-val + (1,))
+        thm-counter.update(counter(heading).get() + (1,))
       }
     }
   }
 
-  // 3. Custom reference logic for @tag and @tag[!]
   show ref: it => {
     let el = it.element
-    if (
-      el != none and el.func() == figure and el.kind == "theorem"
-    ) {
-      let loc = el.location()
-
-      // Handle @tag[!]
+    if el != none and el.func() == figure and el.kind == "theorem" {
+      let location = el.location()
       if it.supplement == [!] and el.caption != none {
-        return link(loc, el.caption.body)
-      } else {
-        return link(loc, [#el.supplement #numbering("1.1.1", ..thm-counter.at(loc))])
+        return link(location, el.caption.body)
       }
+      return link(
+        location,
+        [#el.supplement #numbering(pattern, ..thm-counter.at(location))],
+      )
     }
-    return it
+    it
   }
+
   it
 }
 
-// Make a theorem environment.
-#let make-environment(
-  full-name,
-  short-name,
-  accent-color,
-) = {
-  return (..args) => {
-    let pos = args.pos()
-    let title = none
-    let body = none
-
-    let num = context {
-      let base-level = default-settings.get().heading.thm.base
-      thm-counter.step(level: base-level + 1)
-      numbering("1.1.1", ..thm-counter.get())
-    }
-
-    if pos.len() == 1 {
-      body = pos.at(0)
-    } else if pos.len() == 2 {
-      title = pos.at(0)
-      body = pos.at(1)
-    } else {
-      panic(
-        "Theorem environments expect exactly 1 or 2 positional arguments.",
-      )
-    }
-
-    figure(
-      kind: "theorem",
-      supplement: full-name, // Injects the full name (e.g., "Theorem") into the reference
-      caption: title,
-      outlined: false,
-    )[
-      #context {
-        theorem-render(
-          short-name,
-          title,
-          num,
-          body,
-          color: accent-color,
-        )
-      }
-    ]
+// Environments take either `[body]` or `[title][body]`.
+#let split-arguments(args, name) = {
+  if args.len() == 1 {
+    (none, args.at(0))
+  } else if args.len() == 2 {
+    (args.at(0), args.at(1))
+  } else {
+    panic(
+      name + " expects 1 or 2 positional arguments, got " + str(args.len()) + ".",
+    )
   }
 }
 
-#let theorem = make-environment(
-  "Theorem",
-  "THM",
-  rgb("#1e3a8a"),
-)
-#let lemma = make-environment(
-  "Lemma",
-  "LEM",
-  rgb("#065f46"),
-)
-#let proposition = make-environment(
-  "Proposition",
-  "PROP",
-  rgb("#5b21b6"),
-)
-#let corollary = make-environment(
-  "Corollary",
-  "COR",
-  rgb("#0e7490"),
-)
-#let definition = make-environment(
-  "Definition",
-  "DEF",
-  rgb("#991b1b"),
-)
-#let example = make-environment(
-  "Example",
-  "EX",
-  rgb("#475569"),
-)
-#let remark = make-environment(
-  "Remark",
-  "REM",
-  rgb("#854d0e"),
-)
+// Build an environment function. `theme-key` selects its stroke from the theme.
+#let make-environment(full-name, short-name, theme-key) = (..args) => {
+  let (title, body) = split-arguments(args.pos(), full-name)
+  figure(
+    kind: "theorem",
+    supplement: full-name,
+    caption: title,
+    outlined: false,
+  )[
+    #context {
+      let s = settings.get()
+      thm-counter.step(level: s.headings.thm.base + 1)
+      theorem-render(
+        short-name,
+        title,
+        numbering(s.headings.thm.numbering, ..thm-counter.get()),
+        body,
+        theme-key: theme-key,
+      )
+    }
+  ]
+}
+
+#let theorem = make-environment("Theorem", "THM", "theorem")
+#let proposition = make-environment("Proposition", "PROP", "proposition")
+#let corollary = make-environment("Corollary", "COR", "corollary")
+#let lemma = make-environment("Lemma", "LEM", "lemma")
+#let definition = make-environment("Definition", "DEF", "definition")
+#let example = make-environment("Example", "EX", "example")
+#let remark = make-environment("Remark", "REM", "remark")
 
 #let proof(..args) = context {
-  let pos = args.pos()
-  let title = none
-  let body = none
-
-  if pos.len() == 1 {
-    body = pos.at(0)
-  } else if pos.len() == 2 {
-    title = pos.at(0)
-    body = pos.at(1)
-  } else {
-    panic(
-      "Proof environment expect exactly 1 or 2 positional arguments.",
-    )
-  }
-  let def = default-settings.get()
-  let ascender = def.texts.ascender
-  let half-gutter = def.side.half-gutter
-  sblock(
+  let (title, body) = split-arguments(args.pos(), "Proof")
+  let s = settings.get()
+  let half-gutter = s.side.half-gutter
+  block(
     width: 100%,
-    offset: half-gutter,
+    breakable: true,
     outset: (
       left: half-gutter,
       right: half-gutter,
-      top: ascender,
+      top: s.texts.ascender,
       bottom: 0pt,
     ),
-    stroke: 0.8pt + luma(240),
-    breakable: true,
   )[
     _#if title != none { [#title] } else { [Proof] }._ #body #h(1fr) $square$
   ]

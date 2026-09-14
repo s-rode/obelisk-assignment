@@ -1,322 +1,119 @@
-#import "default.typ": default-settings
+// Layout primitives and page chrome, all reading the resolved `settings` state.
 
-#let v-step(size) = context {
-  let def = default-settings.get()
-  v(size * def.texts.step)
+#import "settings.typ": settings
+#import "@preview/hydra:0.6.3": hydra
+
+// Use the last heading of a page for the running header.
+#let hydra = hydra.with(use-last: true)
+
+// Advance the cursor by `count` line-grid steps.
+#let v-step(count) = context {
+  let s = settings.get()
+  v(count * (s.texts.step + s.texts.ascender))
 }
 
-// A baseline-aligned block.
-#let bblock(it, ..args) = context {
-  let def = default-settings.get()
-  let step = def.texts.step
-  let ascender = def.texts.ascender
-
-  set text(top-edge: "bounds", bottom-edge: "bounds")
-  let height = measure({
-    set text(top-edge: "bounds", bottom-edge: "bounds")
-    it
-  }).height
-  let desired-height = calc.round(height / step) + 1
-  block(
-    height: desired-height * step,
-    inset: (top: (step - ascender) / 2),
-    align(horizon, it),
-    above: 0pt,
-    below: step,
-    ..args,
-  )
-}
-
-
-#let true-metrics(eq) = {
-  let total = measure(text(
-    top-edge: "bounds",
-    bottom-edge: "bounds",
-    eq,
-  ))
-  let strut-height = 1000pt
-  let strut = box(
-    width: 0pt,
-    height: strut-height,
-    baseline: 0pt,
-  )
-
-  let combined = measure(text(
-    top-edge: "bounds",
-    bottom-edge: "bounds",
-    eq + strut,
-  ))
-
-  let descender = combined.height - strut-height
-  let ascender = total.height - descender
-
-  return (
-    height: total.height,
-    ascender: ascender,
-    descender: descender,
-  )
-}
-
-#let place-side(it, dx: 0pt, dy: 0pt, ..args) = context {
-  let def = default-settings.get()
-  let t-width = def.body.width
-  let side-margin = def.side.margin
-  let side-width = def.side.width
-  let half-gutter = def.side.half-gutter
-  let e-margin = def.margin.e
-  let text-height = def.texts.ascender
-  let two-sided = def.paper.two-sided
-
-  let page-num = here().page()
-  let move = if calc.even(page-num) or not two-sided {
-    -side-width - half-gutter + dx
-  } else {
-    t-width + half-gutter + dx
-  }
-  let flush = if calc.even(page-num) or not two-sided {
-    right
-  } else {
-    left
-  }
+// Place `it` in the outer margin, flush right. `dx`/`dy` shift it; the rest go
+// to the wrapping box.
+#let place-side(it, dx: 0pt, dy: 0pt, ..box-args) = context {
+  let s = settings.get()
+  let half-gutter = s.side.half-gutter
   set par(justify: false)
-  let boxed = box(
-    width: side-width,
-    inset: (
-      left: half-gutter,
-      right: half-gutter,
+  place(
+    dx: -s.side.width - half-gutter + dx,
+    dy: dy,
+    box(
+      width: s.side.width,
+      inset: (left: half-gutter, right: half-gutter),
+      outset: (
+        top: half-gutter + s.texts.ascender,
+        bottom: half-gutter,
+      ),
+      ..box-args,
+      align(right, it),
     ),
-    outset: (
-      top: half-gutter + text-height,
-      bottom: half-gutter,
-    ),
-    ..args,
-    align(flush, it),
   )
-  place(dx: move, dy: dy, boxed)
 }
 
+// Center a small symbol (e.g. a heading marker) in the sidenote column.
 #let place-node(sym, dy: 0pt) = context {
-  let def = default-settings.get()
-  let half-gutter = def.side.half-gutter
-  let two-sided = def.paper.two-sided
-  let page-num = here().page()
-  let width = measure(sym).width
-  let dx = if calc.even(page-num) or not two-sided {
-    half-gutter + width / 2
-  } else {
-    -half-gutter - width / 2
-  }
-  place-side(sym, dx: dx, dy: dy)
+  let s = settings.get()
+  place-side(sym, dx: s.side.half-gutter + measure(sym).width / 2, dy: dy)
 }
 
+// Text on a proportionally smaller line grid.
 #let small(it, scale: 2 / 3, size: 0.75em) = context {
-  let def = default-settings.get()
-  let step = def.texts.step * scale
-  set par(leading: step)
+  let s = settings.get()
+  set par(leading: s.texts.step * scale)
   text(size, it)
 }
 
-// automatic stroke side block.
-#let init-sblock() = context {
-  let def = default-settings.get()
-  let width = def.paper.width
-  let height = def.paper.height
-  let e-margin = def.margin.e
-  let t-margin = def.margin.t
-  let f-margin = def.margin.f
-  let step = def.texts.step
-  let ascender = def.texts.ascender
-  let two-sided = def.paper.two-sided
+// Page margins, one grid step taller at the top so the first baseline lands on
+// the grid.
+#let paper-margin(margin, texts) = (
+  top: margin.t + texts.step,
+  left: margin.e,
+  right: margin.s,
+  bottom: margin.f,
+)
 
-  let page-num = counter(page).get().first()
-  let is-odd = calc.odd(page-num) and two-sided
-
-  let all-starts = query(<obelisk:sblock-start>)
-  let all-ends = query(<obelisk:sblock-end>)
-
-  // Get the total number of sblocks in the document
-  let total-blocks = calc.min(all-starts.len(), all-ends.len())
-
-  for id in range(total-blocks) {
-    let start-el = all-starts.at(id)
-    let start-loc = start-el.location()
-    let end-loc = all-ends.at(id).location()
-    let start-pos = start-loc.position()
-    let end-pos = end-loc.position()
-
-    // If the block exists on the current page...
-    if (
-      start-pos.page <= page-num and end-pos.page >= page-num
-    ) {
-      // Extract the unique custom style dictionary from the metadata
-      let config = start-el.value
-      let stroke-style = config.at(
-        "stroke",
-        default: 1pt + black,
-      )
-      let offset = config.at("offset", default: 0.2cm)
-      let outset = config.at("outset", default: (
-        left: 0pt,
-        right: 0pt,
-        top: 0pt,
-        bottom: 0pt,
-      ))
-
-      let x-pos = if is-odd {
-        width - e-margin + offset
-      } else {
-        e-margin - offset
-      }
-      let y-start = (
-        if start-pos.page == page-num {
-          start-pos.y
-        } else {
-          t-margin + step
-        }
-          - outset.top
-      )
-      let y-end = (
-        if end-pos.page == page-num {
-          end-pos.y
-        } else {
-          height - f-margin
-        }
-          + outset.bottom
-      )
-
-      place(
-        top + left,
-        dx: x-pos,
-        dy: y-start,
-        line(
-          start: (0pt, 0pt),
-          end: (0pt, y-end - y-start),
-          stroke: stroke-style,
-        ),
-      )
-    }
-  }
-}
-
-#let sblock(
-  stroke: 1.5pt + black,
-  offset: 0.2cm,
-  body,
-  outset: (
-    left: 0pt,
-    right: 0pt,
-    top: 0pt,
-    bottom: 0pt,
-  ),
-  height: none,
-  ..args,
-) = {
-  context {
-    block(
-      width: 100%,
-      breakable: true,
-      [
-        #metadata((
-          stroke: stroke,
-          offset: offset,
-          outset: outset,
-        ))
-        <obelisk:sblock-start>
-        #if height == none {
-          block(
-            body,
-            breakable: true,
-          )
-        } else {
-          block(
-            body,
-            height: height,
-            breakable: true,
-          )
-        }
-        #metadata(none)
-        <obelisk:sblock-end>
-      ],
-      outset: outset,
-    )
-  }
-}
-
-#let theorem-render(
-  env,
-  name,
-  numstr,
-  it,
-  color: rgb("#A63A2B"),
-) = context {
-  let def = default-settings.get()
-  let margin-w = def.side.width
-  let sans-font = def.fonts.sans
-  let step = def.texts.step
-  let ascender = def.texts.ascender
-  let t-width = def.body.width
-  let half-gutter = def.side.half-gutter
-
-  let page-num = here().page()
-  let side = block(
-    width: def.side.width,
-    text(
-      fill: color,
-      font: sans-font,
-      [*#env #numstr*\ #if name != none { name }],
-    ),
+// Background: the hairline between the text body and the sidenote column, plus
+// a patch that erases it where the page number sits.
+#let page-background(paper, margin, side, fonts, theme) = {
+  let rule-dx = margin.e - side.half-gutter
+  place(
+    top + left,
+    dx: rule-dx,
+    dy: 0pt,
+    line(start: (0%, 0%), end: (0%, 100%), stroke: 0.75pt + theme.line),
   )
-  let s-height = measure(side).height
-  let bottom-out = step - ascender
-  let body-stroke = color + 3pt
-  let body = block(
-    [#place-side(side) #it],
-    width: t-width,
-    breakable: true,
-  )
-  let b-height = measure(body).height
-  sblock(
-    body,
-    height: if s-height > b-height {
-      s-height
-    } else {
-      none
-    },
-    stroke: body-stroke,
-    offset: half-gutter,
-    outset: (
-      left: half-gutter,
-      right: half-gutter,
-      top: ascender + bottom-out,
-      bottom: bottom-out,
+  place(
+    bottom + center,
+    dx: -paper.width / 2 + rule-dx,
+    dy: -margin.f * (2 / 3),
+    box(
+      fill: theme.page,
+      outset: (top: side.half-gutter, bottom: side.half-gutter),
+      text(font: fonts.sans, fill: theme.line)[#h(2em)],
     ),
   )
 }
 
+// Footer: the page number under the text body, the section title at the outer edge.
+#let page-footer(body, margin, side, fonts, theme) = context {
+  let dy = -margin.f * (2 / 3)
+
+  let page-number = text(font: fonts.sans, fill: theme.line)[
+    #text(fill: theme.strong)[#counter(page).get().at(0)]
+  ]
+  place(bottom + center, dx: -body.width / 2 - side.half-gutter, dy: dy, page-number)
+
+  let section-title = {
+    show linebreak: ""
+    text(font: fonts.sans, fill: theme.faint, hydra(1))
+  }
+  place(bottom + left, dx: -side.half-gutter + 2em, dy: dy, section-title)
+}
+
+// A sidenote at the current position, in the outer margin.
 #let sidenote(it, dy: 0pt) = context {
-  let def = default-settings.get()
-  let two-sided = def.paper.two-sided
-  let page-num = here().page()
-  let posx = here().position().x
+  let s = settings.get()
+  let dx = -here().position().x + s.margin.e
+  let baseline-offset = s.texts.ascender * (2 / 3)
   sym.wj
-  let dx = if calc.even(page-num) or not two-sided {
-    -posx + def.margin.e
-  } else {
-    -posx + def.margin.s
-  }
-  box(place-side(small(it), dx: dx, dy: dy))
+  box(place-side(small(it), dx: dx, dy: dy - baseline-offset))
   h(0pt, weak: true)
 }
 
+// A page carrying only a centered, muted note.
 #let blank-page(..args) = context {
-  let mono-font = default-settings.get().fonts.mono
+  let s = settings.get()
   set page(
     background: {
       v(2fr)
-      align(center, text(
-        font: mono-font,
-        fill: luma(150),
-      )[\/\/ This page is intentionally left blank.])
+      align(
+        center,
+        text(font: s.fonts.sans, fill: s.theme.muted)[This page is intentionally left blank.],
+      )
       v(3fr)
     },
     footer: none,
