@@ -1,10 +1,10 @@
 [package]
-name = "obelisk-lite"
-version = "0.3.0"
+name = "obelisk-assignment"
+version = "0.1.0"
 entrypoint = "lib.typ"
-authors = ["atzlt"]
+authors = ["atzlt", "s-rode"]
 license = "MIT"
-description = "A lite version to the Obelisk template."
-categories = ["book", "layout"]
+description = "A clean, compact template for answering assignment sheets, forked from obelisk-lite."
+categories = ["layout"]
 disciplines = ["mathematics", "physics", "computer-science"]
-repository = "https://github.com/atzlt/obelisk-template"
+repository = "https://github.com/s-rode/obelisk-assignment"

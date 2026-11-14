@@ -26,8 +26,23 @@
 
 // A theorem style is a plain color or `(color: .., pattern: ..)`. This
 // normalizes either form to `(label:, paint:)` for the renderer.
+// Sheet environments without their own theme entry borrow one of these.
+#let style-aliases = (
+  task: "theorem",
+  part: "theorem",
+  claim: "proposition",
+  hint: "remark",
+  note: "example",
+)
+
 #let theorem-style(theme, key) = {
-  let style = theme.theorem.at(key)
+  let style = if key in theme.theorem {
+    theme.theorem.at(key)
+  } else if key in style-aliases {
+    theme.theorem.at(style-aliases.at(key))
+  } else {
+    theme.line
+  }
   if type(style) == dictionary {
     (label: style.color, paint: style.pattern)
   } else {

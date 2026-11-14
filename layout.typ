@@ -1,10 +1,6 @@
 // Layout primitives and page chrome, all reading the resolved `settings` state.
 
 #import "settings.typ": settings
-#import "@preview/hydra:0.6.3": hydra
-
-// Use the last heading of a page for the running header.
-#let hydra = hydra.with(use-last: true)
 
 // Advance the cursor by `count` line-grid steps.
 #let v-step(count) = context {
@@ -34,7 +30,7 @@
   )
 }
 
-// Center a small symbol (e.g. a heading marker) in the sidenote column.
+// Center a small symbol (e.g. a heading marker) on the margin rule.
 #let place-node(sym, dy: 0pt) = context {
   let s = settings.get()
   place-side(sym, dx: s.side.half-gutter + measure(sym).width / 2, dy: dy)
@@ -56,42 +52,58 @@
   bottom: margin.f,
 )
 
-// Background: the hairline between the text body and the sidenote column, plus
+// "Course · Exercise Sheet 3", or whatever parts of it are set.
+#let sheet-label(meta) = {
+  let parts = ()
+  if meta.course != none { parts.push(meta.course) }
+  if meta.number != none { parts.push([#meta.kind #meta.number]) }
+  parts.join[ · ]
+}
+
+#let author-name(a) = if type(a) == dictionary { a.name } else { a }
+
+// Background: the hairline between the text body and the margin column, plus
 // a patch that erases it where the page number sits.
 #let page-background(paper, margin, side, fonts, theme) = {
   let rule-dx = margin.e - side.half-gutter
   place(
     top + left,
     dx: rule-dx,
-    dy: 0pt,
     line(start: (0%, 0%), end: (0%, 100%), stroke: 0.75pt + theme.line),
   )
   place(
     bottom + center,
     dx: -paper.width / 2 + rule-dx,
-    dy: -margin.f * (2 / 3),
+    dy: -margin.f / 2,
     box(
       fill: theme.page,
       outset: (top: side.half-gutter, bottom: side.half-gutter),
-      text(font: fonts.sans, fill: theme.line)[#h(2em)],
+      text(font: fonts.sans, size: 0.85em)[#h(2em)],
     ),
   )
 }
 
-// Footer: the page number under the text body, the section title at the outer edge.
-#let page-footer(body, margin, side, fonts, theme) = context {
-  let dy = -margin.f * (2 / 3)
+// Header from page 2 on: the submitters, so loose pages stay attributable.
+#let page-header(meta, side, fonts, theme) = context {
+  if counter(page).get().first() <= 1 or meta.authors.len() == 0 { return }
+  set text(font: fonts.sans, size: 0.75em, fill: theme.muted)
+  align(right + bottom, meta.authors.map(author-name).join[, ])
+}
 
-  let page-number = text(font: fonts.sans, fill: theme.line)[
-    #text(fill: theme.strong)[#counter(page).get().at(0)]
-  ]
-  place(bottom + center, dx: -body.width / 2 - side.half-gutter, dy: dy, page-number)
-
-  let section-title = {
-    show linebreak: ""
-    text(font: fonts.sans, fill: theme.faint, hydra(1))
+// Footer: the page number on the margin rule, the sheet label beside it.
+#let page-footer(body, margin, side, fonts, theme, meta) = context {
+  let dy = -margin.f / 2 + 0.6em
+  set text(font: fonts.sans, size: 0.85em)
+  place(
+    bottom + left,
+    dx: -side.half-gutter - 1em,
+    dy: dy,
+    box(width: 2em, align(center, text(fill: theme.strong)[#counter(page).get().first()])),
+  )
+  let label = sheet-label(meta)
+  if label != none {
+    place(bottom + left, dx: side.half-gutter + 1em, dy: dy, text(fill: theme.muted, label))
   }
-  place(bottom + left, dx: -side.half-gutter + 2em, dy: dy, section-title)
 }
 
 // A sidenote at the current position, in the outer margin.
@@ -102,22 +114,4 @@
   sym.wj
   box(place-side(small(it), dx: dx, dy: dy - baseline-offset))
   h(0pt, weak: true)
-}
-
-// A page carrying only a centered, muted note.
-#let blank-page(..args) = context {
-  let s = settings.get()
-  set page(
-    background: {
-      v(2fr)
-      align(
-        center,
-        text(font: s.fonts.sans, fill: s.theme.muted)[This page is intentionally left blank.],
-      )
-      v(3fr)
-    },
-    footer: none,
-    header: none,
-  )
-  pagebreak(..args)
 }

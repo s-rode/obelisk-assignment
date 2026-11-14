@@ -1,67 +1,135 @@
-// The template entry point: #show: init.with(theme: "flexoki-light")
+// The template entry point:
+//
+//   #show: sheet.with(
+//     course: "Algorithms and Data Structures",
+//     number: 3,
+//     authors: ((name: "Ada Lovelace", id: "123456"), "Alan Turing"),
+//     due: "21.11.2026",
+//   )
 
-#import "settings.typ": (
-  def-fonts, def-headings, def-margin, def-paper, def-side, def-texts,
-  def-theme, resolve-settings, settings,
-)
-#import "layout.typ": page-background, page-footer, paper-margin
-#import "heading.typ": heading-rules
+#import "settings.typ": def-theme, resolve-settings, settings
+#import "layout.typ": page-background, page-footer, page-header, paper-margin, place-node
 #import "theorem.typ": theorem-rules
+#import "code.typ": code-rules
+#import "figure.typ": figure-rules
+#import "title.typ": points-table, title-block
 
-#import "@preview/hydra:0.6.3": anchor
-
-#let init(
+#let sheet(
   it,
-  paper: def-paper,
-  margin: def-margin,
-  side: def-side,
-  texts: def-texts,
-  fonts: def-fonts,
-  headings: def-headings,
+  // Sheet metadata — every field is optional and simply hidden when unset.
+  course: none,
+  number: none,
+  title: none,
+  kind: auto, // "Exercise Sheet" / "Übungsblatt", from `lang`
+  authors: (), // "Name" or (name: "Name", id: "123456")
+  group: none,
+  tutor: none,
+  due: none, // string or datetime
+  lang: "en", // "en" or "de": all labels follow it
+  // Look.
   theme: def-theme,
+  show-title: true,
+  show-points-table: false, // a grading table under the title block
+  show-points-total: false, // add a Σ column to that table
+  // Fine-tuning (dictionaries merged over the defaults in settings.typ).
+  paper: none,
+  margin: none,
+  side: none,
+  texts: none,
+  fonts: none,
+  headings: none,
+  tasks: none,
+  code: none,
+  figures: none,
 ) = context {
-  let s = resolve-settings(paper, margin, side, texts, fonts, headings, theme)
+  let authors = if type(authors) in (str, dictionary, content) { (authors,) } else { authors }
+  let s = resolve-settings((
+    paper: paper,
+    margin: margin,
+    side: side,
+    texts: texts,
+    fonts: fonts,
+    headings: headings,
+    tasks: tasks,
+    code: code,
+    figures: figures,
+    theme: theme,
+    lang: lang,
+    meta: (
+      course: course,
+      title: title,
+      number: number,
+      kind: kind,
+      due: due,
+      authors: authors,
+      group: group,
+      tutor: tutor,
+    ),
+  ))
 
-  // The line grid is built around the ascender height of the body font at the
-  // configured size, so measure it from the resolved settings.
+  // The line grid is built around the ascender height of the body font.
   s.texts.ascender = measure(text(font: s.fonts.body, size: s.texts.size, "h")).height
 
   settings.update(_ => s)
 
-  let (paper, margin, side, body, fonts, texts, headings, theme) = s
+  let (paper, margin, side, body, fonts, texts, headings, theme, meta) = s
+  let step = texts.step
 
+  set document(
+    title: [#if course != none [#course -- ]#s.meta.kind #number],
+    author: authors.map(a => if type(a) == dictionary { a.name } else if type(a) == str { a } else { "" }),
+  )
   set page(
+    width: paper.width,
+    height: paper.height,
     fill: theme.page,
     margin: paper-margin(margin, texts),
     background: page-background(paper, margin, side, fonts, theme),
-    footer: page-footer(body, margin, side, fonts, theme),
-    header: anchor(),
+    header: page-header(meta, side, fonts, theme),
+    footer: page-footer(body, margin, side, fonts, theme, meta),
   )
 
-  set text(font: fonts.body, size: texts.size, fill: theme.text)
+  set text(font: fonts.body, size: texts.size, fill: theme.text, lang: lang)
   set par(
-    leading: texts.step,
-    // Keep lines at least `step + ascender` apart so mixed font sizes stay on
-    // the grid.
-    spacing: (texts.step + texts.ascender) * 1.5 - texts.ascender,
+    leading: step,
+    spacing: (step + texts.ascender) * 1.3 - texts.ascender,
     justify: true,
   )
+  set list(indent: 0.4em, body-indent: 0.6em, marker: text(fill: theme.muted)[•])
+  set enum(indent: 0.4em, body-indent: 0.6em)
+  set table(stroke: 0.5pt + theme.line)
+  show link: set text(fill: theme.strong)
 
   show math.equation: set text(font: fonts.math)
   show math.equation.where(block: true): block.with(breakable: true)
-  show math.equation.where(block: false): it => it // inline equations: unchanged
 
-  // Number headings from level 2 on; level 1 is a divider page.
-  set heading(numbering: (..levels) => {
-    let parts = levels.pos()
-    if parts.len() > 1 { parts.map(str).join(".") } else { none }
-  })
+  // Headings are optional on a sheet (tasks carry the structure), compact,
+  // and unnumbered by default.
+  show heading: set text(font: fonts.sans, weight: "semibold")
+  show heading.where(level: 1): it => {
+    set text(size: texts.size * headings.h1.size)
+    set par(justify: false)
+    block(above: step * 4, below: step * 2, breakable: false, sticky: true)[
+      #place-node(text(fill: theme.line, size: 0.8em, $#headings.h1.sym$)) #it.body
+    ]
+  }
+  show heading.where(level: 2): it => {
+    set text(size: texts.size * headings.h2.size)
+    set par(justify: false)
+    block(above: step * 3, below: step * 1.5, breakable: false, sticky: true)[
+      #place-node(text(fill: theme.line, $#headings.h2.sym$)) #it.body
+    ]
+  }
 
-  show: heading-rules
-  show: theorem-rules.with(
-    base-level: headings.thm.base,
-    pattern: headings.thm.numbering,
-  )
+  show: theorem-rules
+  show: code-rules
+  show: figure-rules
+
+  if show-title { title-block() }
+  if show-points-table { points-table(total: show-points-total) }
 
   it
 }
+
+// Kept for compatibility with obelisk-lite: `#show: init.with(...)`.
+#let init = sheet

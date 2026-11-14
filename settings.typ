@@ -1,56 +1,76 @@
 // Package defaults, configuration merging, and the resolved `settings` state.
 
 #import "theme.typ": def-theme, themes
+#import "labels.typ": labels
 
-// Paper: a 1 : sqrt(2) rectangle (A4 proportions) by default.
+// Paper: A4.
 #let def-paper-width = 21cm
 #let def-paper = (
   width: def-paper-width,
   height: def-paper-width * calc.sqrt(2),
 )
 
-// Margins, proportional to the paper width. `e` (outer) hosts the sidenotes.
+// Margins. `e` (outer, left) hosts the margin labels; it is narrower than in
+// the notes template so the answer column gets more room.
 #let def-margin = (
-  t: def-paper-width / 9,
-  f: def-paper-width / 6,
-  e: def-paper-width / 4,
-  s: def-paper-width / 9,
+  t: 2cm,
+  f: 2.2cm,
+  e: 3.6cm,
+  s: 1.9cm,
 )
 
 #let def-side = (
-  half-gutter: 0.3cm, // gap between the text body and the sidenote text
-  margin: def-margin.s / 3, // extra spacing toward the paper edge
+  half-gutter: 0.3cm, // gap between the text body and the margin labels
+  margin: 0.6cm, // extra spacing toward the paper edge
 )
 
 // `step` sets the line grid: consecutive baselines sit one step apart.
 // `ascender` is not configurable — `init` measures it from the body font.
 #let def-texts = (
   size: 11pt,
-  step: 7.5pt,
+  step: 7pt,
 )
 
+// Each entry may be a single family or a list of fallbacks.
 #let def-fonts = (
-  body: "XCharter",
-  math: "TeX Gyre Pagella Math",
-  sans: "Hanken Grotesk",
-  mono: "IBM Plex Mono",
+  body: ("XCharter", "Charter", "New Computer Modern"),
+  math: ("TeX Gyre Pagella Math", "New Computer Modern Math"),
+  sans: ("Hanken Grotesk", "Avenir Next", "Helvetica Neue"),
+  mono: ("IBM Plex Mono", "Fira Mono", "Menlo"),
 )
 
 #let def-headings = (
-  h2: (
-    sym: sym.circle.filled,
-    dy: 0pt,
-    size: 2,
-  ),
-  h3: (
-    sym: sym.triangle.filled.small.b,
-    dy: 0pt,
-    size: 1.5,
-  ),
-  thm: (
-    base: 1, // heading level at which theorem numbering restarts
-    numbering: "1.1.1", // <section>.<subsection>.<theorem>
-  ),
+  h1: (sym: sym.circle.filled, size: 1.25),
+  h2: (sym: sym.triangle.filled.small.b, size: 1.1),
+)
+
+#let def-tasks = (
+  numbering: "1", // task numbers
+  part-numbering: "(a)", // sub-task numbers, restart with every task
+  thm-numbering: "1.1", // <task>.<n> for lemmas etc. inside answers
+  points-suffix: auto, // auto: taken from the language labels
+)
+
+#let def-code = (
+  numbers: false, // line numbers on fenced code blocks
+  size: 0.85em,
+  lang-label: true, // print the language in the margin
+)
+
+#let def-figures = (
+  caption: "margin", // "margin" or "below"
+)
+
+// Sheet metadata, shown in the title block, header and footer.
+#let def-meta = (
+  course: none,
+  title: none, // e.g. "Graph Algorithms"
+  number: none, // sheet number
+  kind: auto, // auto: "Exercise Sheet" / "Übungsblatt"
+  due: none,
+  authors: (), // strings, or (name: .., id: ..) dictionaries
+  group: none,
+  tutor: none,
 )
 
 // Recursively fill missing (or `none`) entries of `user` from `defaults`.
@@ -75,18 +95,10 @@
 }
 
 // Merge the user's configuration with the defaults and derive the computed
-// values: the text body, the sidenote width, and the resolved theme dictionary.
-#let resolve-settings(paper, margin, side, texts, fonts, headings, theme) = {
+// values: the text body, the margin-label width, the theme and the labels.
+#let resolve-settings(user) = {
   let s = merge-defaults(
-    (
-      paper: paper,
-      margin: margin,
-      side: side,
-      texts: texts,
-      fonts: fonts,
-      headings: headings,
-      theme: theme,
-    ),
+    user,
     (
       paper: def-paper,
       margin: def-margin,
@@ -94,12 +106,20 @@
       texts: def-texts,
       fonts: def-fonts,
       headings: def-headings,
+      tasks: def-tasks,
+      code: def-code,
+      figures: def-figures,
+      meta: def-meta,
       theme: def-theme,
+      lang: "en",
     ),
   )
 
   if not themes.keys().contains(s.theme) {
     panic("Unknown theme: " + str(s.theme))
+  }
+  if not labels.keys().contains(s.lang) {
+    panic("Unknown language: " + str(s.lang) + " (available: " + labels.keys().join(", ") + ")")
   }
 
   s.side.width = s.margin.e - s.side.margin - s.side.half-gutter
@@ -108,6 +128,9 @@
     height: s.paper.height - s.margin.t - s.margin.f,
   )
   s.theme = themes.at(s.theme)
+  s.labels = labels.at(s.lang)
+  if s.tasks.points-suffix == auto { s.tasks.points-suffix = s.labels.points }
+  if s.meta.kind == auto { s.meta.kind = s.labels.sheet }
   s
 }
 
