@@ -49,6 +49,12 @@
   part-numbering: "(a)", // sub-task numbers, restart with every task
   thm-numbering: "1.1", // <task>.<n> for lemmas etc. inside answers
   points-suffix: auto, // auto: taken from the language labels
+  // How questions and answers are told apart. Any of:
+  //   "sans": questions in the sans font, answers in the body font
+  //   "bars": answers get a thin bar and label in the task color, and a
+  //          hairline separates tasks
+  //   "tint": questions on a light background
+  style: ("sans", "bars"),
 )
 
 #let def-code = (

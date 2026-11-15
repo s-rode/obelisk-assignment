@@ -101,6 +101,11 @@ for a complete sheet and [CONFIGURATION.md](CONFIGURATION.md) for all options.
 - References: `@t2` → "Task 2", parts → "Task 2(b)", lemmas → "Lemma 2.1".
   `@x[!]` prints the title.
 
+Questions are set in the sans font and answers in the body font. An answer
+has a thin bar and label in the task's color, and a hairline separates tasks.
+Change this with `tasks: (style: ("sans", "bars", "tint"))`, any subset works,
+`()` turns it off.
+
 A points table and a total column are available but disabled by default:
 `show-points-table: true`, `show-points-total: true`.
 

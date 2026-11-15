@@ -30,7 +30,7 @@ want to change, e.g. `margin: (e: 3cm)`.
 | `texts`    | `size`, `step`                    | Body size (11pt) and line-grid step (7pt). |
 | `fonts`    | `body`, `math`, `sans`, `mono`    | Each a family name or a list of fallbacks. |
 | `headings` | `h1`, `h2`                        | Margin symbol `sym` and `size` factor for optional headings. |
-| `tasks`    | `numbering`, `part-numbering`, `thm-numbering`, `points-suffix` | Numbering patterns (`"1"`, `"(a)"`, `"1.1"`) and the text after points. |
+| `tasks`    | `numbering`, `part-numbering`, `thm-numbering`, `points-suffix`, `style` | Numbering patterns (`"1"`, `"(a)"`, `"1.1"`), the text after points, and how questions and answers are told apart. `style` is a list of `"sans"` (questions in the sans font), `"bars"` (answer bar and label in the task color, hairline between tasks) and `"tint"` (questions on a light background). Default `("sans", "bars")`; `()` gives the plain look. |
 | `code`     | `numbers`, `size`, `lang-label`   | Line numbers by default, code size, and whether the language shows in the margin. |
 | `figures`  | `caption`                         | `"margin"` (default) or `"below"`. |
 

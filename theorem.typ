@@ -49,6 +49,7 @@
   above: 1.5,
   below: 1.5,
   min-lines: 1,
+  tint: false,
 ) = context {
   let s = settings.get()
   let overshoot = s.texts.step / 2
@@ -64,11 +65,12 @@
     breakable: true,
     above: step * above,
     below: step * below,
-    outset: (
-      left: s.side.half-gutter,
-      top: overshoot,
-      bottom: overshoot,
-    ),
+    fill: if tint { color.mix((s.theme.faint, 55%), (s.theme.page, 45%)) },
+    outset: if tint {
+      (left: s.side.half-gutter, right: 0.6em, top: overshoot + 3pt, bottom: overshoot + 3pt)
+    } else {
+      (left: s.side.half-gutter, top: overshoot, bottom: overshoot)
+    },
     stroke: if paint != none { (left: (paint: paint, thickness: thickness)) },
   )
 }
@@ -100,13 +102,21 @@
     let style = theorem-style(s.theme, "task")
     let num = numbering(s.tasks.numbering, ..task-counter.get())
     let points = resolved-points(query(selector(<obelisk-task>).before(here())).last())
+    let flags = s.tasks.style
+    let q = run-in(title, body, style.label)
+    if "sans" in flags { q = text(font: s.fonts.sans, size: 0.95em, q) }
+    let step = s.texts.step + s.texts.ascender
+    if "bars" in flags and task-counter.get().first() > 1 {
+      block(above: step * 1.5, below: 0pt, move(dx: -s.side.half-gutter, line(length: s.body.width + s.side.half-gutter, stroke: 0.5pt + s.theme.line)))
+    }
     env-block(
       text(fill: style.label)[*#s.labels.task-short #num*#if points != none [#h(0.45em)#points-text(points, s)]],
-      run-in(title, body, style.label),
+      q,
       paint: style.paint,
       thickness: 4pt,
-      above: 2,
+      above: if "bars" in flags and task-counter.get().first() > 1 { 1 } else { 2 },
       below: 1,
+      tint: "tint" in flags,
     )
   }]
 }
@@ -124,13 +134,17 @@
     let s = settings.get()
     let style = theorem-style(s.theme, "part")
     let num = numbering(s.tasks.part-numbering, ..part-counter.get())
+    let flags = s.tasks.style
+    let q = run-in(title, body, style.label)
+    if "sans" in flags { q = text(font: s.fonts.sans, size: 0.95em, q) }
     env-block(
       text(fill: style.label)[*#num*#if points != none [#h(0.45em)#points-text(points, s)]],
-      run-in(title, body, style.label),
+      q,
       paint: style.paint,
       thickness: 2pt,
       above: 1.5,
       below: 1,
+      tint: "tint" in flags,
     )
   }]
 }
@@ -144,11 +158,13 @@
   let (title, body) = split-arguments(args.pos(), "answer")
   let s = settings.get()
   let name = if label == auto { s.labels.at(key) } else { label }
+  let bars = "bars" in s.tasks.style
+  let accent = theorem-style(s.theme, "task")
   env-block(
-    if name != none { text(fill: s.theme.muted, tracking: 0.05em, upper(name)) },
+    if name != none { text(fill: if bars { accent.label } else { s.theme.muted }, tracking: 0.05em, upper(name)) },
     run-in(title, body, s.theme.strong),
-    paint: s.theme.line,
-    thickness: 1pt,
+    paint: if bars { accent.paint } else { s.theme.line },
+    thickness: if bars { 1.5pt } else { 1pt },
     above: 1,
     below: 1.2,
   )
