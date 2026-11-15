@@ -9,13 +9,15 @@
 }
 
 // Place `it` in the outer margin, flush right. `dx`/`dy` shift it; the rest go
-// to the wrapping box.
+// to the wrapping box. Works from inside indented containers too: the offset
+// is measured from the text body's left edge, not the container's.
 #let place-side(it, dx: 0pt, dy: 0pt, ..box-args) = context {
   let s = settings.get()
   let half-gutter = s.side.half-gutter
+  let indent = here().position().x - s.margin.e
   set par(justify: false)
   place(
-    dx: -s.side.width - half-gutter + dx,
+    dx: -s.side.width - half-gutter - indent + dx,
     dy: dy,
     box(
       width: s.side.width,
@@ -109,9 +111,8 @@
 // A sidenote at the current position, in the outer margin.
 #let sidenote(it, dy: 0pt) = context {
   let s = settings.get()
-  let dx = -here().position().x + s.margin.e
   let baseline-offset = s.texts.ascender * (2 / 3)
   sym.wj
-  box(place-side(small(it), dx: dx, dy: dy - baseline-offset))
+  box(place-side(small(it), dy: dy - baseline-offset))
   h(0pt, weak: true)
 }

@@ -2,7 +2,7 @@
 
 #import "settings.typ": settings
 #import "layout.typ": author-name, place-side
-#import "theorem.typ": resolved-points
+#import "theorem.typ": no-points, resolved-points
 
 #let emblem-size = 34pt
 #let emblem-stroke = 1.2pt
@@ -111,7 +111,7 @@
   if tasks.len() == 0 { return }
   let num = t => numbering(s.tasks.numbering, ..counter("obelisk:task").at(t.location()))
   let pts = tasks.map(resolved-points)
-  let known = pts.filter(p => p != none)
+  let known = pts.filter(p => type(p) in (int, float))
   let total-pts = if known.len() > 0 { known.sum() } else { none }
   let extra = if total { 1 } else { 0 }
 
@@ -131,7 +131,7 @@
       inset: (x: 0.5em, y: 0.45em),
       head(s.labels.task), ..tasks.map(t => strong(num(t))), ..if total { (strong[Σ],) },
       head(s.labels.points-long),
-      ..pts.map(p => if p != none { text(fill: s.theme.muted)[/#p] }),
+      ..pts.map(p => if not no-points(p) { text(fill: s.theme.muted)[/#p] }),
       ..if total { (if total-pts != none { text(fill: s.theme.muted)[/#total-pts] },) },
       [], ..range(tasks.len() + extra).map(_ => v(0.9em)),
     ),

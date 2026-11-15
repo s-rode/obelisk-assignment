@@ -23,7 +23,10 @@
   }
 }
 
-#let points-text(points, s) = if points != none {
+// Points are optional: `none`, `""` and `[]` all mean "no points".
+#let no-points(p) = p == none or p == "" or p == []
+
+#let points-text(points, s) = if not no-points(points) {
   let p = if type(points) in (int, float) { str(points) } else { points }
   text(fill: s.theme.muted, weight: "regular")[#p #s.tasks.points-suffix]
 }
@@ -31,12 +34,13 @@
 // Points of a task (given by its `<obelisk-task>` metadata `t`): its own
 // `points`, or else the sum of its parts' points. `none` if neither is given.
 #let resolved-points(t) = {
-  if t.value.points != none { return t.value.points }
+  if not no-points(t.value.points) { return t.value.points }
   let next = query(selector(<obelisk-task>).after(t.location(), inclusive: false))
   let sel = selector(<obelisk-part>).after(t.location())
   if next.len() > 0 { sel = sel.before(next.first().location()) }
-  let pts = query(sel).map(p => p.value.points).filter(p => p != none)
-  if pts.len() > 0 { pts.sum() }
+  let pts = query(sel).map(p => p.value.points).filter(p => not no-points(p))
+  // Only numbers can be summed; e.g. `points: "2+1"` is shown but not added.
+  if pts.len() > 0 and pts.all(p => type(p) in (int, float)) { pts.sum() }
 }
 
 // The shared renderer. `label` goes into the margin, `body` next to a bar of
@@ -56,9 +60,12 @@
   let step = s.texts.step + s.texts.ascender
   let label-box = block(width: s.side.width, text(font: s.fonts.sans, size: 0.85em, label))
   // An empty body still needs one line so the margin label has room.
-  let content = if body == none or body == [] {
+  let empty = body == none or body == []
+  let content = if empty {
     box(height: s.texts.ascender + (min-lines - 1) * step)
   } else { body }
+  // An empty body (e.g. a task whose parts follow) is just a label row.
+  let paint = if empty { none } else { paint }
   block(
     block([#place-side(label-box) #content], width: 100%, breakable: true),
     width: 100%,
@@ -103,20 +110,22 @@
     let num = numbering(s.tasks.numbering, ..task-counter.get())
     let points = resolved-points(query(selector(<obelisk-task>).before(here())).last())
     let flags = s.tasks.style
+    let answers = s.tasks.mode == "answers"
     let q = run-in(title, body, style.label)
-    if "sans" in flags { q = text(font: s.fonts.sans, size: 0.95em, q) }
+    if "sans" in flags and not answers and q != none { q = text(font: s.fonts.sans, size: 0.95em, q) }
     let step = s.texts.step + s.texts.ascender
-    if "bars" in flags and task-counter.get().first() > 1 {
+    let rule = "bars" in flags
+    if rule and task-counter.get().first() > 1 {
       block(above: step * 1.5, below: 0pt, move(dx: -s.side.half-gutter, line(length: s.body.width + s.side.half-gutter, stroke: 0.5pt + s.theme.line)))
     }
     env-block(
-      text(fill: style.label)[*#s.labels.task-short #num*#if points != none [#h(0.45em)#points-text(points, s)]],
+      text(fill: style.label)[*#s.labels.task-short #num*#if not no-points(points) [#h(0.45em)#points-text(points, s)]],
       q,
       paint: style.paint,
-      thickness: 4pt,
-      above: if "bars" in flags and task-counter.get().first() > 1 { 1 } else { 2 },
+      thickness: if answers { 3pt } else { 4pt },
+      above: if rule and task-counter.get().first() > 1 { 1 } else { 2 },
       below: 1,
-      tint: "tint" in flags,
+      tint: "tint" in flags and not answers,
     )
   }]
 }
@@ -135,16 +144,39 @@
     let style = theorem-style(s.theme, "part")
     let num = numbering(s.tasks.part-numbering, ..part-counter.get())
     let flags = s.tasks.style
+    let answers = s.tasks.mode == "answers"
     let q = run-in(title, body, style.label)
-    if "sans" in flags { q = text(font: s.fonts.sans, size: 0.95em, q) }
+    if "sans" in flags and not answers and q != none { q = text(font: s.fonts.sans, size: 0.95em, q) }
+    let make-label(num, points) = text(fill: style.label)[*#num*#if not no-points(points) [#h(0.45em)#points-text(points, s)]]
+    let label = make-label(num, points)
+    if answers {
+      // Parts nested in a task: the label hangs inside the text column, so
+      // it does not collide with the task label in the margin. The column is
+      // as wide as the widest label among this task's parts.
+      let small = it => text(font: s.fonts.sans, size: 0.85em, it)
+      let tasks-before = query(selector(<obelisk-task>).before(here()))
+      let sel = selector(<obelisk-part>)
+      if tasks-before.len() > 0 { sel = sel.after(tasks-before.last().location()) }
+      let next = query(selector(<obelisk-task>).after(here()))
+      if next.len() > 0 { sel = sel.before(next.first().location()) }
+      let widths = query(sel).map(m => {
+        let n = numbering(s.tasks.part-numbering, ..part-counter.at(m.location()))
+        measure(small(make-label(n, m.value.points))).width
+      })
+      let w = calc.max(..widths, measure(small(label)).width) + 0.8em
+      let step = s.texts.step + s.texts.ascender
+      return block(above: step * 0.9, below: step * 0.9, breakable: true, pad(left: w)[
+        #place(top + left, dx: -w, dy: 0.08em, small(label))#q
+      ])
+    }
     env-block(
-      text(fill: style.label)[*#num*#if points != none [#h(0.45em)#points-text(points, s)]],
+      label,
       q,
       paint: style.paint,
       thickness: 2pt,
       above: 1.5,
       below: 1,
-      tint: "tint" in flags,
+      tint: "tint" in flags and not answers,
     )
   }]
 }

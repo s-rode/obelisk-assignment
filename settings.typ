@@ -55,6 +55,10 @@
   //          hairline separates tasks
   //   "tint": questions on a light background
   style: ("sans", "bars"),
+  // Set through `sheet(mode: ..)`:
+  //   "questions": task/part bodies are the question, answers go in `answer`
+  //   "answers": task/part bodies are your answer, parts nested in the task
+  mode: "questions",
 )
 
 #let def-code = (
@@ -126,6 +130,10 @@
   }
   if not labels.keys().contains(s.lang) {
     panic("Unknown language: " + str(s.lang) + " (available: " + labels.keys().join(", ") + ")")
+  }
+
+  if s.tasks.mode not in ("questions", "answers") {
+    panic("mode must be \"questions\" or \"answers\", got " + repr(s.tasks.mode))
   }
 
   s.side.width = s.margin.e - s.side.margin - s.side.half-gutter

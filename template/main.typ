@@ -10,22 +10,35 @@
   // due: "01.01.2027",
   // lang: "de",            // German labels
   // theme: "flexoki-dark", // other themes: see README
+  // mode: "answers",       // only write answers, see the second half below
 )
+
+// Mode "questions" (default): restate each question, answer below it.
+// Points are optional everywhere.
 
 #task(points: 4)[Title][Question text.]
 
 #answer[Your answer.]
 
-#task(points: 6)[Second task][]
+#task[Second task][]
 
 #part(points: 2)[First sub-task.]
 #answer[
   Math works as usual: $a^2 + b^2 = c^2$.
 ]
 
-#part(points: 4)[Second sub-task.]
+#part[Second sub-task, without points.]
 #answer[
   #code(title: "solution.py", numbers: true)[```python
   print("hello")
   ```]
 ]
+
+// Mode "answers": put the parts inside their task and write only your
+// answers. With `mode: "answers"` set above, this would look like:
+//
+// #task(points: 5)[
+//   #part(points: 2)[Answer to (a).]
+//   #part(points: 3)[Answer to (b).]
+// ]
+// #task[Title][Answer to a task without parts.]

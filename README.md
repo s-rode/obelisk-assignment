@@ -9,9 +9,10 @@ margin column separated by a vertical rule, and no ornament. Light and dark
 themes are included.
 
 <p>
-  <img src="docs/preview-1.png" width="32%">
-  <img src="docs/preview-2.png" width="32%">
-  <img src="docs/preview-dark.png" width="32%">
+  <img src="docs/preview-1.png" width="24%">
+  <img src="docs/preview-2.png" width="24%">
+  <img src="docs/preview-answers.png" width="24%">
+  <img src="docs/preview-dark.png" width="24%">
 </p>
 
 ## Getting started
@@ -86,10 +87,32 @@ to `sheet.with(...)`.
 All fields of `sheet.with(...)` are optional. See [`example.typ`](example.typ)
 for a complete sheet and [CONFIGURATION.md](CONFIGURATION.md) for all options.
 
+## Two modes
+
+**Questions** (default): each question is restated with `task` and `part`,
+and answered below it with `answer`.
+
+**Answers**: only the answers are written down. Set `mode: "answers"` in
+`sheet.with(...)`; `task` and `part` then contain the answer itself, and parts
+go inside their task:
+
+```typst
+#show: sheet.with(course: "…", number: 4, mode: "answers")
+
+#task(points: 5)[
+  #part(points: 2)[Answer to (a).]
+  #part(points: 3)[Answer to (b).]
+]
+#task[Negative weights][Answer to a task without parts.]
+```
+
+See [`example-answers.typ`](example-answers.typ). Points are optional in both
+modes.
+
 ## Environments
 
-- `task`, `part`: exercise and sub-exercise (a), (b), …. Title, question text
-  and `points:` are optional. A task without points shows the sum of its parts.
+- `task`, `part`: exercise and sub-exercise (a), (b), …. Title, text and
+  `points:` are optional. A task without points shows the sum of its parts.
 - `answer`, `solution`: answer blocks. `label: none` hides the margin label.
 - `hint`, `note`: unnumbered callouts.
 - `result[...]`: frames a final result.

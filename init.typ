@@ -26,6 +26,9 @@
   tutor: none,
   due: none, // string or datetime
   lang: "en", // "en" or "de": all labels follow it
+  // "questions": restate each question, answer below it with `answer`.
+  // "answers": only write your answers; `part`s go inside their `task`.
+  mode: "questions",
   // Look.
   theme: def-theme,
   show-title: true,
@@ -50,7 +53,7 @@
     texts: texts,
     fonts: fonts,
     headings: headings,
-    tasks: tasks,
+    tasks: (if tasks == none { (:) } else { tasks }) + (mode: mode),
     code: code,
     figures: figures,
     theme: theme,

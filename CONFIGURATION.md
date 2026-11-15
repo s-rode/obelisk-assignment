@@ -12,6 +12,7 @@
 | `group`, `tutor`    | `none`             | Optional metadata fields. |
 | `due`               | `none`             | String or `datetime`. |
 | `lang`              | `"en"`             | `"en"` or `"de"`; sets every label. Add languages in `labels.typ`. |
+| `mode`              | `"questions"`      | `"questions"`: tasks and parts hold the question, `answer` holds the answer. `"answers"`: tasks and parts hold the answer, parts go inside their task. |
 | `theme`             | `"default"`        | A theme name from `theme.typ`. |
 | `show-title`        | `true`             | Draw the title block. |
 | `show-points-table` | `false`            | Grading table after the title block. |
