@@ -14,10 +14,46 @@ themes are included.
   <img src="docs/preview-dark.png" width="32%">
 </p>
 
+## Getting started
+
+Install the template once as a local Typst package (macOS and Linux):
+
+```bash
+git clone https://github.com/s-rode/obelisk-assignment
+cd obelisk-assignment
+./install.sh
+```
+
+Then start a new sheet anywhere:
+
+```bash
+typst init @local/obelisk-assignment:0.1.0 sheet-03
+cd sheet-03
+typst watch main.typ
+```
+
+This creates `sheet-03/main.typ` with the title block and one example of each
+environment. Edit the `sheet.with(...)` arguments at the top, delete what you
+don't need, and write your answers. The template files are not copied into the
+sheet folder, so every sheet stays a single file.
+
+For an existing file, import it directly:
+
+```typst
+#import "@local/obelisk-assignment:0.1.0": *
+```
+
+To change the template itself (colors, margins, labels), edit the cloned folder
+and run `./install.sh` again. With `./install.sh --link` the installed package
+points at the folder instead of a copy, so edits apply immediately. Fonts are
+listed under [Fonts](#fonts). To use a different layout for a single sheet,
+no template edit is needed: pass e.g. `margin: (e: 3cm)` or `texts: (size: 10pt)`
+to `sheet.with(...)`.
+
 ## Usage
 
 ```typst
-#import "lib.typ": *
+#import "@local/obelisk-assignment:0.1.0": *
 
 #show: sheet.with(
   course: "Algorithms and Data Structures",

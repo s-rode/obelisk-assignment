@@ -8,3 +8,8 @@ description = "A clean, compact template for answering assignment sheets, forked
 categories = ["layout"]
 disciplines = ["mathematics", "physics", "computer-science"]
 repository = "https://github.com/s-rode/obelisk-assignment"
+
+[template]
+path = "template"
+entrypoint = "main.typ"
+thumbnail = "docs/preview-1.png"
