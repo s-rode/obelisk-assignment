@@ -34,6 +34,7 @@ want to change, e.g. `margin: (e: 3cm)`.
 | `tasks`    | `numbering`, `part-numbering`, `thm-numbering`, `points-suffix`, `style` | Numbering patterns (`"1"`, `"(a)"`, `"1.1"`), the text after points, and how questions and answers are told apart. `style` is a list of `"sans"` (questions in the sans font), `"bars"` (answer bar and label in the task color, hairline between tasks) and `"tint"` (questions on a light background). Default `("sans", "bars")`; `()` gives the plain look. |
 | `code`     | `numbers`, `size`, `lang-label`   | Line numbers by default, code size, and whether the language shows in the margin. |
 | `figures`  | `caption`                         | `"margin"` (default) or `"below"`. |
+| `tables`   | `header-case`                     | `"upper"` (default) or `"normal"` to keep the header text as typed. |
 
 ## Themes
 
@@ -58,5 +59,6 @@ uses `remark`, and `note` uses `example`, unless a theme defines them itself.
 | `title.typ`    | Title block and points table. |
 | `theorem.typ`  | Tasks, parts, answers, callouts, theorem-likes, and references. |
 | `code.typ`     | Code block and inline code styling. |
+| `table.typ`    | Table styling. |
 | `figure.typ`   | Figure/plot styling (captions in the margin) and `plot`. |
 | `theme.typ`    | Color themes. |

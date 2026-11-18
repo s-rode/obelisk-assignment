@@ -89,6 +89,18 @@
     d_k (v) = min{ d_(k-1)(v), min_((u, v) in E) d_(k-1)(u) + w(u, v) }.
   $
   A shell one-liner for checking: `python3 -m doctest bf.py`.
+  @tab-sssp compares the two algorithms.
+
+  #figure(
+    table(
+      columns: 4,
+      align: (left, center, right, right),
+      table.header[Algorithm][Negative weights][Time][Space],
+      [Dijkstra (binary heap)], [no], [$O((|V| + |E|) log |V|)$], [$O(|V|)$],
+      [Bellman–Ford], [yes], [$O(|V| dot |E|)$], [$O(|V|)$],
+    ),
+    caption: [Single-source shortest paths.],
+  ) <tab-sssp>
 
   ```rust
   fn relax(d: &mut [i64], u: usize, v: usize, w: i64) -> bool {

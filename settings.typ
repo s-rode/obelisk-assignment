@@ -34,7 +34,7 @@
 // Each entry may be a single family or a list of fallbacks.
 #let def-fonts = (
   body: ("XCharter", "Charter", "New Computer Modern"),
-  math: ("TeX Gyre Pagella Math", "New Computer Modern Math"),
+  math: ("XCharter Math", "New Computer Modern Math"),
   sans: ("Hanken Grotesk", "Avenir Next", "Helvetica Neue"),
   mono: ("IBM Plex Mono", "Fira Mono", "Menlo"),
 )
@@ -65,6 +65,10 @@
   numbers: false, // line numbers on fenced code blocks
   size: 0.85em,
   lang-label: true, // print the language in the margin
+)
+
+#let def-tables = (
+  header-case: "upper", // "upper" or "normal" (keep the header text as typed)
 )
 
 #let def-figures = (
@@ -119,6 +123,7 @@
       tasks: def-tasks,
       code: def-code,
       figures: def-figures,
+      tables: def-tables,
       meta: def-meta,
       theme: def-theme,
       lang: "en",

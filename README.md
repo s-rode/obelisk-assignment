@@ -121,6 +121,9 @@ modes.
 - Code: fenced ```` ```lang ```` blocks are styled automatically.
   `#code(title: .., numbers: true)` adds a file name or line numbers.
 - `plot(...)`, `figure(...)`: see [Plots](#plots).
+- Tables: plain `table(...)` gets a tinted header row and hairlines between
+  rows. Wrap it in `figure(..., caption: [...])` for a numbered table with the
+  caption in the margin.
 - References: `@t2` → "Task 2", parts → "Task 2(b)", lemmas → "Lemma 2.1".
   `@x[!]` prints the title.
 
@@ -161,14 +164,16 @@ For dark themes, additionally use light axes and labels, e.g.
 
 ## Fonts
 
-XCharter, Hanken Grotesk, IBM Plex Mono and TeX Gyre Pagella Math. On macOS:
+XCharter with XCharter Math, Hanken Grotesk and IBM Plex Mono. On macOS:
 
 ```bash
-brew install --cask font-hanken-grotesk font-tex-gyre-pagella-math font-ibm-plex-mono
+brew install --cask font-hanken-grotesk font-ibm-plex-mono
 ```
 
-XCharter is available from [CTAN](https://ctan.org/pkg/xcharter) and ships with
-TeX Live (`texmf-dist/fonts/opentype/public/xcharter`). Missing fonts are
+XCharter and XCharter Math are available from CTAN
+([xcharter](https://ctan.org/pkg/xcharter),
+[xcharter-math](https://ctan.org/pkg/xcharter-math)) and ship with TeX Live
+(`texmf-dist/fonts/opentype/public/xcharter` and `.../xcharter-math`). Missing fonts are
 replaced by fallbacks, with a compiler warning.
 
 ## License

@@ -12,6 +12,7 @@
 #import "theorem.typ": theorem-rules
 #import "code.typ": code-rules
 #import "figure.typ": figure-rules
+#import "table.typ": table-rules
 #import "title.typ": points-table, title-block
 
 #let sheet(
@@ -44,6 +45,7 @@
   tasks: none,
   code: none,
   figures: none,
+  tables: none,
 ) = context {
   let authors = if type(authors) in (str, dictionary, content) { (authors,) } else { authors }
   let s = resolve-settings((
@@ -56,6 +58,7 @@
     tasks: (if tasks == none { (:) } else { tasks }) + (mode: mode),
     code: code,
     figures: figures,
+    tables: tables,
     theme: theme,
     lang: lang,
     meta: (
@@ -100,7 +103,6 @@
   )
   set list(indent: 0.4em, body-indent: 0.6em, marker: text(fill: theme.muted)[•])
   set enum(indent: 0.4em, body-indent: 0.6em)
-  set table(stroke: 0.5pt + theme.line)
   show link: set text(fill: theme.strong)
 
   show math.equation: set text(font: fonts.math)
@@ -127,6 +129,7 @@
   show: theorem-rules
   show: code-rules
   show: figure-rules
+  show: table-rules
 
   if show-title { title-block() }
   if show-points-table { points-table(total: show-points-total) }
