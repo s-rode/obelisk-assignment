@@ -42,3 +42,6 @@
 //   #part(points: 3)[Answer to (b).]
 // ]
 // #task[Title][Answer to a task without parts.]
+//
+// Inside a part, `#subpart[...]` numbers sub-items (i), (ii), … and
+// `#todo[...]` marks unfinished answers (the footer counts them).

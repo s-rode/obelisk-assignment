@@ -7,6 +7,7 @@
 
 #let task-counter = counter("obelisk:task")
 #let part-counter = counter("obelisk:part")
+#let subpart-counter = counter("obelisk:subpart")
 // Theorem-likes are numbered <task>.<n> and restart with every task.
 #let thm-counter = counter("obelisk:theorem")
 
@@ -139,7 +140,7 @@
     caption: title,
     outlined: false,
     numbering: _ => none,
-  )[#part-counter.step()#metadata((points: points))<obelisk-part>#context {
+  )[#part-counter.step()#subpart-counter.update(0)#metadata((points: points))<obelisk-part>#context {
     let s = settings.get()
     let style = theorem-style(s.theme, "part")
     let num = numbering(s.tasks.part-numbering, ..part-counter.get())
@@ -152,14 +153,10 @@
     if answers {
       // Parts nested in a task: the label hangs inside the text column, so
       // it does not collide with the task label in the margin. The column is
-      // as wide as the widest label among this task's parts.
+      // as wide as the widest part label in the document, so answers start
+      // at the same position in every task.
       let small = it => text(font: s.fonts.sans, size: 0.85em, it)
-      let tasks-before = query(selector(<obelisk-task>).before(here()))
-      let sel = selector(<obelisk-part>)
-      if tasks-before.len() > 0 { sel = sel.after(tasks-before.last().location()) }
-      let next = query(selector(<obelisk-task>).after(here()))
-      if next.len() > 0 { sel = sel.before(next.first().location()) }
-      let widths = query(sel).map(m => {
+      let widths = query(<obelisk-part>).map(m => {
         let n = numbering(s.tasks.part-numbering, ..part-counter.at(m.location()))
         measure(small(make-label(n, m.value.points))).width
       })
@@ -180,6 +177,30 @@
     )
   }]
 }
+
+/// A sub-item inside a part: (i), (ii), … restarting with every part. The
+/// label hangs in front of the text like the part labels.
+#let subpart(body) = [#subpart-counter.step()#context {
+  let s = settings.get()
+  let style = theorem-style(s.theme, "part")
+  let small = it => text(font: s.fonts.sans, size: 0.85em, it)
+  let label = small(text(fill: style.label, numbering(s.tasks.subpart-numbering, ..subpart-counter.get())))
+  let w = measure(small(numbering(s.tasks.subpart-numbering, 8))).width + 0.7em
+  let step = s.texts.step + s.texts.ascender
+  block(above: step * 0.7, below: step * 0.7, breakable: true, pad(left: w)[
+    #place(top + left, dx: -w, dy: 0.08em, label)#body
+  ])
+}]
+
+/// A visible placeholder for unfinished answers. Marked in the margin, and the
+/// footer counts the open TODOs so none slip into the handed-in version.
+#let todo(body) = [#metadata("todo")<obelisk-todo>#context {
+  let s = settings.get()
+  let red = theorem-style(s.theme, "definition").label
+  let mark = text(font: s.fonts.sans, size: 0.72em, weight: "semibold", tracking: 0.06em, fill: red)[TODO]
+  box(place-side(mark, dy: -s.texts.ascender * (2 / 3)))
+  text(fill: red, if body == [] or body == none { [TODO] } else { body })
+}]
 
 // ---------------------------------------------------------------------------
 // Answers and callouts
@@ -287,6 +308,11 @@
 //   @x[!] → the environment's title.
 
 #let theorem-rules(it) = {
+  // Tasks, parts and theorem-likes are figures (for numbering and
+  // references), but must still break across pages like normal text.
+  show figure.where(kind: "obelisk-task"): set block(breakable: true)
+  show figure.where(kind: "obelisk-part"): set block(breakable: true)
+  show figure.where(kind: "obelisk-theorem"): set block(breakable: true)
   show figure.where(kind: "obelisk-task"): it => align(left, it.body)
   show figure.where(kind: "obelisk-part"): it => align(left, it.body)
   show figure.where(kind: "obelisk-theorem"): it => align(left, it.body)

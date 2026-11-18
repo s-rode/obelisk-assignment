@@ -40,5 +40,8 @@
             d[v] = min(d[v], d[u] + w)
     ```
   ]
-  #part[The running time is $O(|V| dot |E|)$.]
+  #part[
+    #subpart[The running time is $O(|V| dot |E|)$.]
+    #subpart[A negative cycle exists iff a further round still relaxes an edge.]
+  ]
 ]

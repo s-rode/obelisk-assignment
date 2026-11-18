@@ -8,5 +8,6 @@
 #import "figure.typ": plot
 #import "theorem.typ": (
   answer, claim, corollary, definition, example, hint, lemma, make-environment,
-  note, part, proof, proposition, remark, result, solution, task, theorem,
+  note, part, proof, proposition, remark, result, solution, subpart, task,
+  theorem, todo,
 )

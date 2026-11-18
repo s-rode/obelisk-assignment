@@ -47,6 +47,7 @@
 #let def-tasks = (
   numbering: "1", // task numbers
   part-numbering: "(a)", // sub-task numbers, restart with every task
+  subpart-numbering: "(i)", // `subpart` numbers, restart with every part
   thm-numbering: "1.1", // <task>.<n> for lemmas etc. inside answers
   points-suffix: auto, // auto: taken from the language labels
   // How questions and answers are told apart. Any of:

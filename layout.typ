@@ -1,6 +1,7 @@
 // Layout primitives and page chrome, all reading the resolved `settings` state.
 
 #import "settings.typ": settings
+#import "theme.typ": theorem-style
 
 // Advance the cursor by `count` line-grid steps.
 #let v-step(count) = context {
@@ -105,6 +106,12 @@
   let label = sheet-label(meta)
   if label != none {
     place(bottom + left, dx: side.half-gutter + 1em, dy: dy, text(fill: theme.muted, label))
+  }
+  // Open TODOs, counted over the whole document.
+  let todos = query(<obelisk-todo>).len()
+  if todos > 0 {
+    let red = theorem-style(theme, "definition").label
+    place(bottom + right, dy: dy, text(fill: red, weight: "semibold")[#todos TODO#if todos > 1 [s]])
   }
 }
 

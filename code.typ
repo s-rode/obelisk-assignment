@@ -25,10 +25,11 @@
   show raw: set text(font: s.fonts.mono, size: s.code.size)
 
   // Inline code: a light chip.
+  // The chip's padding is drawn outside the text box (outset), so it adds no
+  // space around the word.
   show raw.where(block: false): it => box(
     fill: fill,
-    inset: (x: 2.5pt),
-    outset: (y: 2.5pt),
+    outset: (x: 1.8pt, y: 2.5pt),
     radius: 1.5pt,
     it,
   )

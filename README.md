@@ -114,6 +114,10 @@ modes.
 - `task`, `part`: exercise and sub-exercise (a), (b), …. Title, text and
   `points:` are optional. A task without points shows the sum of its parts.
 - `answer`, `solution`: answer blocks. `label: none` hides the margin label.
+- `subpart`: sub-items (i), (ii), … inside a part, numbered automatically.
+- `todo[...]`: placeholder for unfinished answers, shown in red and marked in
+  the margin. The footer counts open TODOs, so none end up in the version you
+  hand in.
 - `hint`, `note`: unnumbered callouts.
 - `result[...]`: frames a final result.
 - `lemma`, `claim`, `theorem`, `definition`, …, `proof`: numbered per task
